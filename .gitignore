@@ -1,0 +1,41 @@
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+.eggs/
+*.egg-info/
+*.egg
+
+# Logs & generated data
+logs/
+memories/
+games/
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Distribution
+dist/
+build/
+*.manifest
+
+# Project files
+CSE 291A Presentation  4.pdf

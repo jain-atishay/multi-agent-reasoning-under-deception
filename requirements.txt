@@ -1,0 +1,4 @@
+# Blood on the Clocktower - Multi-Agent Game Engine
+# Core (no extra deps for random mode)
+# For LLM mode:
+openai>=1.0.0
