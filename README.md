@@ -1,6 +1,5 @@
 # Blood on the Clocktower — Multi-Agent Game Engine
 
-Python game engine for the CSE 291A research project:  
 **"Studying Multi-Agent Reasoning Under Deception"**
 
 ---
