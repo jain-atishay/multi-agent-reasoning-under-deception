@@ -248,6 +248,7 @@ class LLMAgent(BaseAgent):
         self.evil_team: list[dict] = []
         self.suspicion_scores: dict[str, float] = {}
         self.conversation_history: list[dict] = []
+        self.game_reflections: list[dict] = []  # Track reflections across games
 
         self._client = None
 
@@ -381,6 +382,17 @@ class LLMAgent(BaseAgent):
     def on_evil_briefing(self, evil_summary: list[dict]):
         self.evil_team = evil_summary
 
+    def initialize_suspicion_for_players(self, player_ids: list[str]):
+        """Initialize suspicion scores for all players at game start."""
+        if self.use_belief_modeling and not self.suspicion_scores:
+            for pid in player_ids:
+                if pid != self.player_id:
+                    # Start neutral (0.5 = unknown)
+                    self.suspicion_scores[pid] = 0.5
+        # Always initialize evil teammates at low suspicion (we know them)
+        if self.use_belief_modeling and self.evil_team:
+            for teammate in self.evil_team:
+                self.suspicion_scores[teammate['player_id']] = 0.1
     def choose_night_target(
         self,
         action: str,
@@ -811,6 +823,10 @@ class LLMAgent(BaseAgent):
         final_state: dict,
         my_role: str,
     ) -> Optional[str]:
+        """
+        Post-game reflection: learn from outcomes.
+        Stores key lessons in memory_buffer for future games.
+        """
         won = (
             (game_result == "good" and self.my_team == "good") or
             (game_result == "evil" and self.my_team == "evil")
@@ -821,16 +837,40 @@ class LLMAgent(BaseAgent):
         user_msg = (
             f"The game has ended. Your team ({self.my_team}) {outcome}.\n"
             f"You played as: {my_role}\n\n"
-            f"Final game state:\n{json.dumps(final_state, indent=2)}\n\n"
-            f"Please reflect on (per proposal):\n"
-            f"1. What worked?\n2. What gave away information?\n3. How could you play better next time?\n\n"
-            f"Keep your reflection to 3-5 sentences. It will be stored as memory for future games."
+            f"Analysis:\n"
+            f"- What were the key moments that led to {outcome}ing?\n"
+            f"- Which players did you misjudge?\n"
+            f"- What information or signals did you miss or over-value?\n\n"
+            f"Please provide a structured reflection:\n"
+            f"1. KEY LESSON: (1 sentence capturing the main insight)\n"
+            f"2. MISTAKES: (what you got wrong)\n"
+            f"3. BETTER NEXT TIME: (specific tactical improvement)\n\n"
+            f"Be concise (2-3 sentences per point). This will inform your future play."
         )
         reflection = self._call_llm(system, user_msg)
 
         if reflection and self.use_learning:
-            self.memory_buffer.append(f"[{my_role}, {outcome}] {reflection}")
+            # Store structured reflection
+            memory_entry = f"[{my_role}, {outcome}] {reflection}"
+            self.memory_buffer.append(memory_entry)
+            
+            # Store full reflection for analysis
+            self.game_reflections.append({
+                "role": my_role,
+                "outcome": outcome,
+                "reflection": reflection,
+            })
+            
+            # Keep only last 5 games in memory buffer (for prompt context)
             if len(self.memory_buffer) > 5:
                 self.memory_buffer = self.memory_buffer[-5:]
 
         return reflection
+
+    def on_game_end(self):
+        """Called at the end of each game to reset per-game state."""
+        if self.use_belief_modeling:
+            self.suspicion_scores = {}
+        self.night_infos = []
+        self.evil_team = []
+        self.conversation_history = []

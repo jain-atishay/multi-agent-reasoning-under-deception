@@ -193,6 +193,11 @@ class Storyteller:
             agent = self._agent_map[p.player_id]
             agent.on_evil_briefing(evil_summary)
 
+        # Initialize suspicion scores for all agents
+        player_ids = [p.player_id for p in self.state.players]
+        for agent in self.agents:
+            if hasattr(agent, 'initialize_suspicion_for_players'):
+                agent.initialize_suspicion_for_players(player_ids)
     # ──────────────────────────────────────────
     # NIGHT PHASE
     # ──────────────────────────────────────────
@@ -830,3 +835,8 @@ class Storyteller:
                 self.logger.log_reflection(
                     player.player_id, reflection, self.state.round_number
                 )
+        
+        # Call on_game_end() on all agents to reset per-game state
+        for agent in self.agents:
+            if hasattr(agent, 'on_game_end'):
+                agent.on_game_end()
