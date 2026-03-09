@@ -249,6 +249,9 @@ class LLMAgent(BaseAgent):
         self.suspicion_scores: dict[str, float] = {}
         self.conversation_history: list[dict] = []
         self.game_reflections: list[dict] = []  # Track reflections across games
+        
+        # Theory of Mind: Rich belief structure about other agents
+        self.agent_beliefs: dict[str, dict] = {}  # pid -> {believed_role, believed_team, confidence, suspicion, reasoning}
 
         self._client = None
 
@@ -350,11 +353,27 @@ class LLMAgent(BaseAgent):
             return "No suspicion data yet."
         sorted_s = sorted(self.suspicion_scores.items(), key=lambda x: -x[1])
         return ", ".join(f"{pid}:{score:.2f}" for pid, score in sorted_s)
+    
+    def _format_beliefs(self) -> str:
+        """Format agent beliefs for display in prompts."""
+        if not self.agent_beliefs:
+            return "No beliefs formed yet."
+        lines = []
+        for pid, belief in sorted(self.agent_beliefs.items(), key=lambda x: -x[1].get("suspicion", 0)):
+            lines.append(
+                f"{pid}: {belief.get('believed_role', 'Unknown')} "
+                f"({belief.get('believed_team', 'unknown')}, "
+                f"conf={belief.get('confidence', 0):.2f}, "
+                f"susp={belief.get('suspicion', 0):.2f}) - "
+                f"{belief.get('reasoning', '')[:40]}"
+            )
+        return "\n  ".join(lines)
 
     # Exponential smoothing for suspicion (WOLF benchmark: suspicion aggregates across rounds)
     SUSPICION_ALPHA = 0.4  # Weight for new observation; 1-alpha for prior
 
     def _update_suspicion(self, response_text: str, public_state: dict):
+        """Legacy suspicion update - kept for backward compatibility."""
         players = public_state.get("players", [])
         pid_list = [p["player_id"] for p in players if p["player_id"] != self.player_id]
 
@@ -378,21 +397,115 @@ class LLMAgent(BaseAgent):
                     self.suspicion_scores[pid] = max(0.0, min(1.0, smoothed))
         except (json.JSONDecodeError, AttributeError, TypeError):
             pass
+    
+    def _update_beliefs(self, response_text: str, public_state: dict):
+        """Theory of Mind: Update rich belief structure about other agents."""
+        if not self.use_belief_modeling:
+            return
+        
+        players = public_state.get("players", [])
+        pid_list = [p["player_id"] for p in players if p["player_id"] != self.player_id]
+        
+        # Get player names for better prompt
+        pid_to_name = {p["player_id"]: p["name"] for p in players}
+        
+        prompt = (
+            f"Based on all available information (your role, night info, discussion, votes), "
+            f"output your beliefs about each player as a JSON object.\n\n"
+            f"For each player ID in {pid_list}, provide:\n"
+            f"- believed_role: your best guess of their role (e.g., 'Imp', 'Empath', 'Baron', 'Unknown')\n"
+            f"- believed_team: 'good' or 'evil' or 'unknown'\n"
+            f"- confidence: 0.0-1.0 (how certain you are)\n"
+            f"- suspicion: 0.0-1.0 (0=definitely good, 1=definitely demon/evil)\n"
+            f"- reasoning: one brief sentence explaining your belief\n\n"
+            f"Example format:\n"
+            f'{{"p1": {{"believed_role": "Imp", "believed_team": "evil", "confidence": 0.8, '
+            f'"suspicion": 0.9, "reasoning": "Claimed Fortune Teller but conflicts with Empath"}}, '
+            f'"p2": {{"believed_role": "Empath", "believed_team": "good", "confidence": 0.7, '
+            f'"suspicion": 0.2, "reasoning": "Empath claim aligns with deaths"}}}}\n\n'
+            f"Respond ONLY with valid JSON."
+        )
+        
+        raw = self._call_llm(self._build_system_prompt(), prompt)
+        
+        try:
+            # Extract JSON from response
+            match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', raw, re.DOTALL)
+            if match:
+                new_beliefs = json.loads(match.group())
+                
+                for pid, belief in new_beliefs.items():
+                    if pid not in pid_list:
+                        continue
+                    
+                    # Validate and extract belief components
+                    believed_role = belief.get("believed_role", "Unknown")
+                    believed_team = belief.get("believed_team", "unknown")
+                    confidence = float(belief.get("confidence", 0.5))
+                    suspicion = float(belief.get("suspicion", 0.5))
+                    reasoning = belief.get("reasoning", "")
+                    
+                    # Store belief (no smoothing on first beliefs)
+                    if pid not in self.agent_beliefs:
+                        self.agent_beliefs[pid] = {
+                            "believed_role": believed_role,
+                            "believed_team": believed_team,
+                            "confidence": max(0.0, min(1.0, confidence)),
+                            "suspicion": max(0.0, min(1.0, suspicion)),
+                            "reasoning": reasoning,
+                        }
+                    else:
+                        # Smooth suspicion and confidence
+                        old_belief = self.agent_beliefs[pid]
+                        self.agent_beliefs[pid] = {
+                            "believed_role": believed_role,  # Take latest role belief
+                            "believed_team": believed_team,  # Take latest team belief
+                            "confidence": max(0.0, min(1.0, 
+                                self.SUSPICION_ALPHA * confidence + 
+                                (1 - self.SUSPICION_ALPHA) * old_belief.get("confidence", 0.5)
+                            )),
+                            "suspicion": max(0.0, min(1.0,
+                                self.SUSPICION_ALPHA * suspicion + 
+                                (1 - self.SUSPICION_ALPHA) * old_belief.get("suspicion", 0.5)
+                            )),
+                            "reasoning": reasoning,
+                        }
+                    
+                    # Keep legacy suspicion_scores in sync
+                    self.suspicion_scores[pid] = self.agent_beliefs[pid]["suspicion"]
+                    
+        except (json.JSONDecodeError, AttributeError, TypeError, ValueError) as e:
+            # Fallback to legacy suspicion update if belief parsing fails
+            pass
 
     def on_evil_briefing(self, evil_summary: list[dict]):
         self.evil_team = evil_summary
 
     def initialize_suspicion_for_players(self, player_ids: list[str]):
-        """Initialize suspicion scores for all players at game start."""
+        """Initialize suspicion scores and belief structures for all players at game start."""
         if self.use_belief_modeling and not self.suspicion_scores:
             for pid in player_ids:
                 if pid != self.player_id:
                     # Start neutral (0.5 = unknown)
                     self.suspicion_scores[pid] = 0.5
+                    self.agent_beliefs[pid] = {
+                        "believed_role": "Unknown",
+                        "believed_team": "unknown",
+                        "confidence": 0.0,
+                        "suspicion": 0.5,
+                        "reasoning": "Game just started",
+                    }
         # Always initialize evil teammates at low suspicion (we know them)
         if self.use_belief_modeling and self.evil_team:
             for teammate in self.evil_team:
                 self.suspicion_scores[teammate['player_id']] = 0.1
+                self.agent_beliefs[teammate['player_id']] = {
+                    "believed_role": teammate['role'],
+                    "believed_team": "evil",
+                    "confidence": 1.0,
+                    "suspicion": 0.0,
+                    "reasoning": "I know they are on my evil team",
+                }
     def choose_night_target(
         self,
         action: str,
@@ -493,7 +606,7 @@ class LLMAgent(BaseAgent):
 
         if self.use_belief_modeling:
             try:
-                self._update_suspicion(response, public_state)
+                self._update_beliefs(response, public_state)
             except Exception:
                 pass
 
@@ -770,10 +883,21 @@ class LLMAgent(BaseAgent):
         state_str = self._format_public_state(public_state)
         discussion_str = self._format_discussion(discussion_history)
         suspicion = self.suspicion_scores.get(nominee_id, 0.5) if self.use_belief_modeling else 0.5
-        suspicion_line = (
-            f"Your suspicion score for {nominee_id}: {suspicion:.2f}\n\n"
-            if self.use_belief_modeling else ""
-        )
+        
+        # Use rich beliefs if available
+        belief_line = ""
+        if self.use_belief_modeling and nominee_id in self.agent_beliefs:
+            belief = self.agent_beliefs[nominee_id]
+            belief_line = (
+                f"Your belief about {nominee_id}: "
+                f"{belief.get('believed_role', 'Unknown')} "
+                f"({belief.get('believed_team', 'unknown')} team, "
+                f"confidence={belief.get('confidence', 0):.2f}, "
+                f"suspicion={belief.get('suspicion', 0):.2f})\n"
+                f"Reasoning: {belief.get('reasoning', '')}\n\n"
+            )
+        else:
+            belief_line = f"Your suspicion score for {nominee_id}: {suspicion:.2f}\n\n"
 
         alive = sum(1 for p in public_state.get("players", []) if p.get("is_alive", True))
         valid_nominees = [p["player_id"] for p in public_state.get("players", []) if p.get("is_alive", True)]
@@ -810,7 +934,7 @@ class LLMAgent(BaseAgent):
             + (f"{solver_block}\n" if solver_block else "")
             + f"RECENT DISCUSSION:\n{discussion_str}\n\n"
             f"VOTE: {nominator_id} has nominated {nominee_id} for execution.\n"
-            f"{suspicion_line}"
+            f"{belief_line}"
             f"Should you vote to execute {nominee_id}?{vote_hint}\n"
             f"Respond with ONLY: YES or NO"
         )
@@ -871,6 +995,92 @@ class LLMAgent(BaseAgent):
         """Called at the end of each game to reset per-game state."""
         if self.use_belief_modeling:
             self.suspicion_scores = {}
+            self.agent_beliefs = {}
         self.night_infos = []
         self.evil_team = []
         self.conversation_history = []
+    
+    def compute_belief_accuracy(self, actual_state: dict) -> dict:
+        """
+        Compute accuracy of agent's beliefs against actual game state.
+        
+        Args:
+            actual_state: Full game state with actual roles/teams (from to_full_dict)
+        
+        Returns:
+            Dictionary with accuracy metrics:
+            - role_accuracy: % of correct role beliefs
+            - team_accuracy: % of correct team beliefs
+            - high_conf_role_accuracy: accuracy when confidence > 0.7
+            - suspicion_correlation: correlation between suspicion and actual evil status
+            - belief_count: number of beliefs formed
+        """
+        if not self.agent_beliefs:
+            return {
+                "role_accuracy": 0.0,
+                "team_accuracy": 0.0,
+                "high_conf_role_accuracy": 0.0,
+                "suspicion_correlation": 0.0,
+                "belief_count": 0,
+            }
+        
+        # Build actual role/team mapping
+        actual_roles = {}
+        actual_teams = {}
+        for p in actual_state.get("players", []):
+            pid = p.get("player_id")
+            actual_roles[pid] = p.get("role")
+            actual_teams[pid] = p.get("team")
+        
+        role_correct = 0
+        team_correct = 0
+        high_conf_beliefs = 0
+        high_conf_correct = 0
+        suspicion_evil_sum = 0.0
+        suspicion_good_sum = 0.0
+        evil_count = 0
+        good_count = 0
+        
+        for pid, belief in self.agent_beliefs.items():
+            if pid not in actual_roles:
+                continue
+            
+            # Role accuracy
+            if belief.get("believed_role") == actual_roles[pid]:
+                role_correct += 1
+            
+            # Team accuracy
+            if belief.get("believed_team") == actual_teams[pid]:
+                team_correct += 1
+            
+            # High confidence accuracy
+            if belief.get("confidence", 0) > 0.7:
+                high_conf_beliefs += 1
+                if belief.get("believed_role") == actual_roles[pid]:
+                    high_conf_correct += 1
+            
+            # Suspicion correlation with actual evil status
+            suspicion = belief.get("suspicion", 0.5)
+            if actual_teams[pid] == "evil":
+                suspicion_evil_sum += suspicion
+                evil_count += 1
+            else:
+                suspicion_good_sum += suspicion
+                good_count += 1
+        
+        n = len(self.agent_beliefs)
+        avg_suspicion_evil = suspicion_evil_sum / evil_count if evil_count > 0 else 0.5
+        avg_suspicion_good = suspicion_good_sum / good_count if good_count > 0 else 0.5
+        
+        # Suspicion correlation: evil should have higher suspicion than good
+        suspicion_correlation = avg_suspicion_evil - avg_suspicion_good
+        
+        return {
+            "role_accuracy": role_correct / n if n > 0 else 0.0,
+            "team_accuracy": team_correct / n if n > 0 else 0.0,
+            "high_conf_role_accuracy": high_conf_correct / high_conf_beliefs if high_conf_beliefs > 0 else 0.0,
+            "suspicion_correlation": suspicion_correlation,
+            "belief_count": n,
+            "avg_suspicion_evil": avg_suspicion_evil,
+            "avg_suspicion_good": avg_suspicion_good,
+        }

@@ -37,6 +37,8 @@ class GameRecord:
     # For Deductive Ability (proposal): role-to-reasoning semantic similarity
     # Each item: {role, player_id, message} — use embeddings for post-hoc analysis
     reasoning_samples: list[dict] = field(default_factory=list)
+    # Theory of Mind metrics
+    belief_metrics: dict = field(default_factory=dict)  # Per-agent belief accuracy metrics
 
 
 @dataclass
@@ -68,6 +70,11 @@ class GameStats:
 
     # History of all game records (for deep analysis)
     game_history: list[dict] = field(default_factory=list)
+    
+    # Theory of Mind aggregate metrics
+    avg_role_accuracy: float = 0.0
+    avg_team_accuracy: float = 0.0
+    avg_suspicion_correlation: float = 0.0
 
     def update(self, record: GameRecord):
         self.games_played += 1
@@ -118,7 +125,36 @@ class GameStats:
             "demon_executed": record.demon_executed,
             "variant": record.agent_variant,
             "reasoning_samples": record.reasoning_samples,  # for Deductive Ability analysis
+            "belief_metrics": record.belief_metrics,  # Theory of Mind metrics
         })
+        
+        # Update belief accuracy running averages
+        if record.belief_metrics:
+            # Aggregate belief metrics across all agents in this game
+            role_accs = [m.get("role_accuracy", 0) for m in record.belief_metrics.values() if m.get("belief_count", 0) > 0]
+            team_accs = [m.get("team_accuracy", 0) for m in record.belief_metrics.values() if m.get("belief_count", 0) > 0]
+            susp_corrs = [m.get("suspicion_correlation", 0) for m in record.belief_metrics.values() if m.get("belief_count", 0) > 0]
+            
+            if role_accs:
+                game_role_acc = sum(role_accs) / len(role_accs)
+                self.avg_role_accuracy = (
+                    (self.avg_role_accuracy * (self.games_played - 1) + game_role_acc)
+                    / self.games_played
+                )
+            
+            if team_accs:
+                game_team_acc = sum(team_accs) / len(team_accs)
+                self.avg_team_accuracy = (
+                    (self.avg_team_accuracy * (self.games_played - 1) + game_team_acc)
+                    / self.games_played
+                )
+            
+            if susp_corrs:
+                game_susp_corr = sum(susp_corrs) / len(susp_corrs)
+                self.avg_suspicion_correlation = (
+                    (self.avg_suspicion_correlation * (self.games_played - 1) + game_susp_corr)
+                    / self.games_played
+                )
 
     # ── Derived metrics ────────────────────────────────────────
 
@@ -159,6 +195,15 @@ class GameStats:
             f"  Nomination accuracy:  {self.nomination_accuracy:.1%}",
             f"  Execution accuracy:   {self.execution_accuracy:.1%}",
         ]
+        
+        # Add Theory of Mind metrics if available
+        if self.avg_role_accuracy > 0 or self.avg_team_accuracy > 0:
+            lines.append("")
+            lines.append("  Theory of Mind (Belief Accuracy):")
+            lines.append(f"    Role accuracy:       {self.avg_role_accuracy:.1%}")
+            lines.append(f"    Team accuracy:       {self.avg_team_accuracy:.1%}")
+            lines.append(f"    Suspicion corr:      {self.avg_suspicion_correlation:+.3f}")
+        
         if self.variant_performance:
             lines.append("")
             lines.append("  Per-variant evil win rate:")

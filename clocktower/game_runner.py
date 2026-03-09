@@ -325,6 +325,18 @@ class _InstrumentedStoryteller(Storyteller):
                     "player_id": pid,
                     "message": e.get("message", ""),
                 })
+        
+        # Theory of Mind: collect belief accuracy metrics from agents
+        belief_metrics = {}
+        full_state = self.state.to_full_dict()
+        for p in self.state.players:
+            agent = self._agent_map.get(p.player_id)
+            if agent and hasattr(agent, 'compute_belief_accuracy'):
+                try:
+                    metrics = agent.compute_belief_accuracy(full_state)
+                    belief_metrics[p.player_id] = metrics
+                except Exception:
+                    pass  # Skip if agent doesn't support belief tracking
 
         return GameRecord(
             game_id=self.game_id,
@@ -338,4 +350,5 @@ class _InstrumentedStoryteller(Storyteller):
             role_survivals=role_survivals,
             agent_variant=variant,
             reasoning_samples=reasoning_samples,
+            belief_metrics=belief_metrics,
         )
