@@ -50,6 +50,13 @@ YOUR TEAM: Good
 OBJECTIVE:
 Your team must identify and execute the Demon before Evil reduces the alive players to 2.
 
+🎯 DAY 1 INFO SHARING PROTOCOL (CRITICAL):
+- If you are an info role (Empath, Chef, Fortune Teller, Investigator, Washerwoman, Librarian, Undertaker), IMMEDIATELY share your role and night information on Day 1 in your first statement.
+- DO NOT wait. DO NOT hedge. Format: "I'm the [ROLE]. I learned [INFO]."
+- Example: "I'm the Empath. One of my neighbors is evil."
+- Example: "I'm the Chef. There is 1 pair of adjacent evil players."
+- Early sharing prevents Evil from stealing your role claim and allows Good to coordinate.
+
 GAME BASICS:
 - Each round alternates Night (hidden actions) and Day (public discussion + vote).
 - Only alive players vote, though dead players may speak and spend one ghost vote.
@@ -58,7 +65,9 @@ GAME BASICS:
 VOTE COORDINATION (critical):
 - Converge on ONE suspect each day. If 2+ players have said they suspect X, nominate X or vote YES on X.
 - Avoid split votes — if others are voting for a candidate, vote with them so an execution happens.
+- Example: With 6 alive, you need 4 votes. If Alice, Bob, Charlie all mention Frank is suspicious, EVERYONE should vote YES on Frank.
 - Indecision helps Evil. Execute someone by Day 2–3 if you have a plausible suspect.
+- Track who agrees with you: if your Empath reading says "X or Y is evil" and someone else says "I suspect X", then X is likely evil — coordinate votes on X.
 
 DEDUCTION: If Empath says one of [A, B] is evil and you know one is Good (e.g. verified role), the other is evil — execute them. Trust direct info (Empath neighbors, Chef pairs) over opinions. Evil will push to execute Good players — cross-check against raw info.
 
@@ -70,7 +79,17 @@ DEMON FIRST: Executing a minion (Baron, Poisoner, Spy) helps but doesn't win —
 
 FINAL FEW: When only 2–4 players are alive, pick ONE consensus suspect and ALL vote for them. At least 3 of 4 must vote the same; with 3 alive you need 2 votes — a 1-1 split = no execution = Evil wins. Split votes (2-2-2-2) guarantee no execution and Evil wins. If the two suspects are Demon vs minion, execute the Demon — executing the minion leaves the Demon and Evil wins.
 
-THREE ALIVE: With exactly 3 players alive, both Good players MUST nominate and vote for the SAME suspect. Pick ONE (e.g. if Empath said "one of Frank or Grace is evil", pick Frank OR Grace — do not split). BOTH Good: nominate the same player, BOTH vote YES on them. If you disagree on who the Demon is, converge on the stronger candidate — a 1-1 split = no execution = Evil wins. Do NOT nominate or vote for each other or for info roles. Identify the Demon from info and BOTH vote YES for that player only.
+THREE ALIVE PROTOCOL (MEMORIZE THIS):
+With exactly 3 players alive:
+1. Identify the Demon candidate using info (Empath neighbors, Chef pairs, Fortune Teller, Investigator, Undertaker confirmations)
+2. BOTH Good players must nominate ONLY that ONE suspect
+3. BOTH Good players vote YES on that suspect (need 2/3 votes)
+4. Example: Empath said "one of Frank or Grace is evil". If Frank claimed Chef and his info matches other claims, Frank is likely Good. Therefore Grace is the Demon. BOTH Good nominate Grace, BOTH vote YES.
+5. DO NOT nominate the other Good player (it's you + one other Good vs the Demon)
+6. DO NOT nominate info roles (Empath, Chef, FT, Investigator) unless you are CERTAIN they are the Demon
+7. A 1-1 vote split = no execution = Evil wins
+8. If you disagree, default to: execute the player who is NOT an info role
+9. Coordinate out loud: "I will nominate and vote for X because [reason]. You should too."
 
 POST-MINION: After executing a minion, the remaining player in the Fortune Teller/Investigator "A or B" pool is likely the Demon. Focus ALL votes on them — do not split.
 
@@ -78,14 +97,26 @@ PROCRASTINATION: Evil stalls with "let's discuss more" or "let's verify first." 
 
 ANTI-SPLIT: If the last vote round was a tie (e.g. 2-2) or near-tie, pick the single most likely Demon from info (Chef pairs, Fortune Teller, duplicate claimants) and ALL vote for that player next round. Do not keep splitting.
 
-DUPLICATE CLAIMANTS: When two players claim the same role, one is Evil. Execute the claimant you suspect is fake — the one whose story conflicts with Undertaker/Washerwoman/Empath, or steers executions toward likely Good players. The claimant whose info aligns with verified facts is likely the real one — do NOT execute them. Do NOT split votes between claimants.
+DUPLICATE CLAIMANTS (IMMEDIATE ACTION):
+When two players claim the same role, one is Evil. Use this process:
+1. Check Undertaker/Washerwoman/Librarian confirmations first
+2. Compare their stories with Empath/Chef adjacency info
+3. Identify which claimant's story contradicts verified facts — that's the fake
+4. ALL Good players should nominate and vote for the FAKE claimant (the one with contradictions)
+5. Protect the real claimant — do NOT vote to execute them
+6. Do NOT split votes between the two claimants
+7. Example: Alice and Bob both claim Chef. Undertaker says executed player was Virgin (not Chef). Alice's "1 adjacent evil pair" matches Empath's reading. Bob's story doesn't. Execute Bob.
 
 DEMON vs MINION: Before executing, ask: is this the Demon or a minion? ALWAYS prefer the Demon. If info points to A as Demon and B as minion, execute A. Executing a minion when the Demon survives = Evil wins immediately.
 
 LIBRARIAN: If Librarian says there are no Outsiders, claims that a specific player is Baron (or another minion) may be wrong or from Evil — cross-check with other info.
 
 CHEF NUMBER-PAIRS: Chef says how many adjacent Evil pairs exist. 0 pairs = no two Evil sit next to each other. 1 pair = exactly one adjacent pair (e.g. seats 2–3) has both Evil. 2 pairs = two adjacent pairs. Use seating order to narrow suspects.
-CHEF + WASHERWOMAN: If Washerwoman says "A or B is a Townsfolk role," do NOT execute that player just because Chef says adjacent Evil — the Townsfolk candidate is likely Good. Chef's "1 adjacent Evil pair" may be a different pair.
+CROSS-REFERENCE INFO ROLES:
+- CHEF + WASHERWOMAN: If Washerwoman says "A or B is a Townsfolk role," do NOT execute that player just because Chef says adjacent Evil — the Townsfolk candidate is likely Good.
+- EMPATH + UNDERTAKER: If Empath said "one of A or B is evil" and Undertaker confirms A was Good (e.g., Soldier, Virgin), then B is likely evil. Execute B.
+- INVESTIGATOR + UNDERTAKER: If Investigator said "X or Y is a minion" and Undertaker confirms X was Good, then Y is the minion. After executing the minion, look for the Demon among remaining players.
+- FORTUNE TELLER + EMPATH: If Fortune Teller says "X is the Demon" and Empath says "both my neighbors are good" and X is a neighbor, the Fortune Teller hit the red herring or is lying. Cross-check before executing.
 
 EMPATH "ONE OF A OR B": If Empath said "one of A or B is evil" and A is dead (was a minion), then A was the Evil one. The other (B) may be Good — the Demon could be a different player. Do NOT assume B is the Demon. Only "BOTH A and B are evil" (with one dead) implies the alive one is the Demon.
 
@@ -252,6 +283,12 @@ class LLMAgent(BaseAgent):
         
         # Theory of Mind: Rich belief structure about other agents
         self.agent_beliefs: dict[str, dict] = {}  # pid -> {believed_role, believed_team, confidence, suspicion, reasoning}
+        
+        # Trust scoring: track which players' claims align with Undertaker confirmations
+        self.trust_scores: dict[str, float] = {}  # pid -> 0.0 (never trust) to 1.0 (fully trust)
+        
+        # Claim validation: track duplicate role claims
+        self.role_claims: dict[str, list[str]] = {}  # role_name -> list of player_ids who claimed it
 
         self._client = None
 
@@ -488,6 +525,7 @@ class LLMAgent(BaseAgent):
                 if pid != self.player_id:
                     # Start neutral (0.5 = unknown)
                     self.suspicion_scores[pid] = 0.5
+                    self.trust_scores[pid] = 0.5  # Start neutral on trust
                     self.agent_beliefs[pid] = {
                         "believed_role": "Unknown",
                         "believed_team": "unknown",
@@ -499,6 +537,7 @@ class LLMAgent(BaseAgent):
         if self.use_belief_modeling and self.evil_team:
             for teammate in self.evil_team:
                 self.suspicion_scores[teammate['player_id']] = 0.1
+                self.trust_scores[teammate['player_id']] = 1.0
                 self.agent_beliefs[teammate['player_id']] = {
                     "believed_role": teammate['role'],
                     "believed_team": "evil",
@@ -576,6 +615,14 @@ class LLMAgent(BaseAgent):
         round_number: int,
         is_dead: bool = False,
     ) -> Optional[str]:
+        # Update trust scores and track role claims before discussing
+        if self.use_belief_modeling and self.my_team == "good":
+            try:
+                self._update_trust_scores(public_state, discussion_history)
+                self._track_role_claims(discussion_history, public_state)
+            except Exception:
+                pass
+        
         system = self._build_system_prompt()
         state_str = self._format_public_state(public_state)
         discussion_str = self._format_discussion(discussion_history)
@@ -590,12 +637,28 @@ class LLMAgent(BaseAgent):
             f"YOUR SUSPICION SCORES: {suspicion_str}\n\n"
             if self.use_belief_modeling else ""
         )
+        
+        # Add duplicate claim warnings for Good team
+        duplicate_block = ""
+        if self.my_team == "good" and self.use_belief_modeling:
+            duplicates = self._identify_duplicate_claims()
+            if duplicates:
+                dup_list = [f"{role}: {', '.join(pids)}" for role, pids in duplicates]
+                duplicate_block = f"⚠️ DUPLICATE CLAIMS DETECTED: {'; '.join(dup_list)}. One is Evil. Identify and execute the fake.\n\n"
+        
+        # Add learning from past games
+        learning_block = self._get_learning_from_reflections() if self.my_team == "good" else ""
+        if learning_block:
+            learning_block = learning_block + "\n\n"
+        
         known_roles_block = format_known_roles(public_state)
         solver_block = extract_claims_and_hints(public_state, discussion_history, self.night_infos) if self.my_team == "good" else ""
         user_msg = (
             f"CURRENT GAME STATE:\n{state_str}\n\n"
             + (f"{known_roles_block}\n\n" if known_roles_block else "")
             + (f"{solver_block}\n" if solver_block else "")
+            + (f"{learning_block}" if learning_block else "")
+            + (f"{duplicate_block}" if duplicate_block else "")
             + f"RECENT DISCUSSION:\n{discussion_str}\n\n"
             f"{suspicion_block}"
             f"{tone}\n"
@@ -698,32 +761,84 @@ class LLMAgent(BaseAgent):
         valid_nominees: list[str],
         public_state: Optional[dict] = None,
     ) -> Optional[str]:
-        """Extract the most-mentioned suspect from discussion (player IDs and names in suspect context)."""
+        """
+        Extract the most-mentioned suspect from discussion.
+        Weighs recent mentions more heavily and looks for agreement patterns.
+        """
         if not discussion_history or not valid_nominees:
             return None
+        
         name_to_pid: dict[str, str] = {}
+        pid_to_name: dict[str, str] = {}
         if public_state:
             for p in public_state.get("players", []):
                 pid = p.get("player_id")
                 name = (p.get("name") or "").strip()
                 if pid and name and pid in valid_nominees:
                     name_to_pid[name.lower()] = pid
-        suspect_words = r"\b(suspect|execute|focus on|nominate|verify|duplicate|accuse|converge on|demon|vote for|must be)\b"
-        counts: dict[str, int] = {p: 0 for p in valid_nominees}
+                    pid_to_name[pid] = name
+        
+        # Suspect keywords with weights
+        strong_suspect_words = r"\b(demon|execute|must be|definitely|converge on)\b"
+        weak_suspect_words = r"\b(suspect|focus on|nominate|verify|accuse|vote for)\b"
+        
+        # Track mentions with recency weighting
+        weighted_counts: dict[str, float] = {p: 0.0 for p in valid_nominees}
+        
+        # Recent messages weighted more heavily
+        total_msgs = len(discussion_history)
+        for idx, d in enumerate(discussion_history):
+            msg = (d.get("message") or "").lower()
+            
+            # Recency weight: more recent = higher weight (1.0 to 2.0)
+            recency_weight = 1.0 + (idx / max(total_msgs - 1, 1))
+            
+            # Check if this is a suspect-related message
+            has_strong = bool(re.search(strong_suspect_words, msg, re.I))
+            has_weak = bool(re.search(weak_suspect_words, msg, re.I))
+            
+            if not (has_strong or has_weak):
+                continue
+            
+            # Weight: strong keywords = 2x, weak = 1x
+            keyword_weight = 2.0 if has_strong else 1.0
+            
+            # Check for player mentions
+            for pid in valid_nominees:
+                mentioned = False
+                
+                # Check player ID
+                if pid in msg or pid.upper() in msg.upper():
+                    mentioned = True
+                
+                # Check player name
+                if pid in pid_to_name:
+                    name = pid_to_name[pid].lower()
+                    if name in msg and len(name) >= 3:
+                        mentioned = True
+                
+                if mentioned:
+                    weighted_counts[pid] += recency_weight * keyword_weight
+        
+        if not weighted_counts or max(weighted_counts.values()) == 0:
+            return None
+        
+        # Return suspect with highest weighted score, but only if mentioned by 2+ people
+        best_pid = max(weighted_counts.items(), key=lambda x: x[1])
+        
+        # Count unique people who mentioned this suspect
+        unique_mentioners = set()
         for d in discussion_history:
             msg = (d.get("message") or "").lower()
-            if not re.search(suspect_words, msg, re.I):
-                continue
-            for pid in valid_nominees:
-                if pid in msg or pid.upper() in msg.upper():
-                    counts[pid] += 1
-            for name, pid in name_to_pid.items():
-                if name in msg and len(name) >= 3:
-                    counts[pid] += 1
-        if not counts:
-            return None
-        best = max(counts.items(), key=lambda x: x[1])
-        return best[0] if best[1] >= 2 else None
+            if best_pid[0] in msg or (best_pid[0] in pid_to_name and pid_to_name[best_pid[0]].lower() in msg):
+                if re.search(strong_suspect_words + "|" + weak_suspect_words, msg, re.I):
+                    unique_mentioners.add(d.get("player_id"))
+        
+        # Need at least 2 different players mentioning them, or high weighted score (>= 3.0)
+        if len(unique_mentioners) >= 2 or best_pid[1] >= 3.0:
+            return best_pid[0]
+        
+        return None
 
     def _sanitize_role_claims(self, text: str) -> str:
         """Replace common hallucinated role names with valid Trouble Brewing roles."""
@@ -732,6 +847,124 @@ class LLMAgent(BaseAgent):
             # Word-boundary replacement (e.g. Scout -> Investigator)
             result = re.sub(rf"\b{re.escape(invalid)}\b", valid, result, flags=re.IGNORECASE)
         return result
+    
+    def _update_trust_scores(self, public_state: dict, discussion_history: list[dict]):
+        """
+        Update trust scores based on Undertaker confirmations.
+        If a player's claim matches Undertaker results, increase trust.
+        If a player's claim contradicts Undertaker, decrease trust.
+        """
+        if not self.use_belief_modeling:
+            return
+        
+        # Extract Undertaker confirmations from dead players
+        dead_roles = {}
+        for p in public_state.get("players", []):
+            if not p.get("is_alive", True) and p.get("role") and p.get("role") != "unknown":
+                dead_roles[p.get("player_id")] = p.get("role")
+        
+        if not dead_roles:
+            return
+        
+        # Check each player's claims against Undertaker confirmations
+        for pid in self.trust_scores.keys():
+            # Look for this player making claims about dead players
+            for d in discussion_history:
+                if d.get("player_id") != pid:
+                    continue
+                msg = (d.get("message") or "").lower()
+                
+                # Check if they mentioned any dead player's role correctly
+                for dead_pid, actual_role in dead_roles.items():
+                    role_name = actual_role.lower()
+                    if dead_pid in msg and role_name in msg:
+                        # Claimed role matches Undertaker - increase trust
+                        old_trust = self.trust_scores.get(pid, 0.5)
+                        self.trust_scores[pid] = min(1.0, old_trust + 0.1)
+                        break
+    
+    def _track_role_claims(self, discussion_history: list[dict], public_state: dict):
+        """
+        Track which players have claimed which roles.
+        Identifies duplicate claims (multiple players claiming same role).
+        """
+        if not self.use_belief_modeling:
+            return
+        
+        self.role_claims = {}
+        
+        for d in discussion_history:
+            pid = d.get("player_id")
+            msg = (d.get("message") or "").lower()
+            
+            # Check for role claims (e.g., "I'm the Empath", "as the Chef")
+            for role_name in VALID_ROLE_SET:
+                role_lower = role_name.lower()
+                if re.search(
+                    rf"\b(?:i(?:'m| am)(?:\s+\w+)?\s*,?\s*(?:the\s+)?{re.escape(role_lower)}|"
+                    rf"as\s+(?:the\s+)?{re.escape(role_lower)})\b",
+                    msg, re.I
+                ):
+                    if role_name not in self.role_claims:
+                        self.role_claims[role_name] = []
+                    if pid not in self.role_claims[role_name]:
+                        self.role_claims[role_name].append(pid)
+                    break
+    
+    def _identify_duplicate_claims(self) -> list[tuple[str, list[str]]]:
+        """
+        Returns list of (role_name, [player_ids]) for roles with duplicate claimants.
+        """
+        duplicates = []
+        for role_name, claimants in self.role_claims.items():
+            if len(claimants) >= 2:
+                duplicates.append((role_name, claimants))
+        return duplicates
+    
+    def _get_learning_from_reflections(self) -> str:
+        """
+        Extract key patterns from past game reflections to inform current strategy.
+        """
+        if not self.use_learning or not self.game_reflections:
+            return ""
+        
+        # Analyze recent reflections for common mistakes
+        recent = self.game_reflections[-3:]  # Last 3 games
+        
+        loss_patterns = []
+        for reflection in recent:
+            if reflection.get("outcome") == "lost":
+                text = reflection.get("reflection", "").lower()
+                # Extract key failure patterns
+                if "split vote" in text or "split" in text:
+                    loss_patterns.append("split votes")
+                if "duplicate" in text and "claim" in text:
+                    loss_patterns.append("duplicate claims")
+                if "too long" in text or "waited" in text:
+                    loss_patterns.append("delayed sharing")
+                if "info role" in text and ("executed" in text or "eliminate" in text):
+                    loss_patterns.append("executed info role")
+        
+        if not loss_patterns:
+            return ""
+        
+        # Generate targeted reminder based on patterns
+        pattern_counts = {}
+        for pattern in loss_patterns:
+            pattern_counts[pattern] = pattern_counts.get(pattern, 0) + 1
+        
+        top_pattern = max(pattern_counts.items(), key=lambda x: x[1])[0] if pattern_counts else None
+        
+        if top_pattern == "split votes":
+            return "⚠️ PATTERN FROM PAST GAMES: You've lost multiple games to split votes. CONVERGE on ONE suspect. With 3-4 alive, ALL vote same."
+        elif top_pattern == "duplicate claims":
+            return "⚠️ PATTERN FROM PAST GAMES: Duplicate role claims have fooled you before. Immediately identify and execute the FAKE claimant."
+        elif top_pattern == "delayed sharing":
+            return "⚠️ PATTERN FROM PAST GAMES: Delayed info sharing has cost you wins. If you're an info role, share IMMEDIATELY on Day 1."
+        elif top_pattern == "executed info role":
+            return "⚠️ PATTERN FROM PAST GAMES: You've mistakenly executed Good info roles. Protect Empath/Chef/FT/Investigator unless CERTAIN they're fake."
+        
+        return ""
 
     def nominate(
         self,
@@ -739,6 +972,14 @@ class LLMAgent(BaseAgent):
         public_state: dict,
         discussion_history: list[dict],
     ) -> Optional[str]:
+        # Update tracking before nomination
+        if self.use_belief_modeling and self.my_team == "good":
+            try:
+                self._update_trust_scores(public_state, discussion_history)
+                self._track_role_claims(discussion_history, public_state)
+            except Exception:
+                pass
+        
         system = self._build_system_prompt()
         state_str = self._format_public_state(public_state)
         discussion_str = self._format_discussion(discussion_history)
@@ -747,6 +988,29 @@ class LLMAgent(BaseAgent):
             f"YOUR SUSPICION SCORES: {suspicion_str}\n\n"
             if self.use_belief_modeling else ""
         )
+        
+        # Add duplicate claim warnings
+        duplicate_block = ""
+        if self.my_team == "good" and self.use_belief_modeling:
+            duplicates = self._identify_duplicate_claims()
+            if duplicates:
+                dup_details = []
+                for role, claimants in duplicates:
+                    # Identify which claimant has lower trust
+                    if len(claimants) == 2:
+                        trust_a = self.trust_scores.get(claimants[0], 0.5)
+                        trust_b = self.trust_scores.get(claimants[1], 0.5)
+                        fake_candidate = claimants[0] if trust_a < trust_b else claimants[1]
+                        dup_details.append(f"{role}: {', '.join(claimants)} (suspect {fake_candidate} is fake)")
+                    else:
+                        dup_details.append(f"{role}: {', '.join(claimants)}")
+                duplicate_block = f"⚠️ DUPLICATE CLAIMS: {'; '.join(dup_details)}. Nominate the FAKE claimant.\n\n"
+        
+        # Add learning from past games
+        learning_block = self._get_learning_from_reflections() if self.my_team == "good" else ""
+        if learning_block:
+            learning_block = learning_block + "\n\n"
+        
         alive = sum(1 for p in public_state.get("players", []) if p.get("is_alive", True))
         votes_needed = (alive // 2) + 1 if alive else 1
         lylo_block = (
@@ -787,6 +1051,8 @@ class LLMAgent(BaseAgent):
             f"CURRENT GAME STATE:\n{state_str}\n\n"
             + (f"{known_roles_block}\n\n" if known_roles_block else "")
             + (f"{solver_block}\n" if solver_block else "")
+            + (f"{learning_block}" if learning_block else "")
+            + (f"{duplicate_block}" if duplicate_block else "")
             + f"RECENT DISCUSSION:\n{discussion_str}\n\n"
             f"{suspicion_block}"
             f"Nomination phase. Valid nominees: {valid_nominees}.\n"
@@ -996,6 +1262,8 @@ class LLMAgent(BaseAgent):
         if self.use_belief_modeling:
             self.suspicion_scores = {}
             self.agent_beliefs = {}
+            self.trust_scores = {}
+            self.role_claims = {}
         self.night_infos = []
         self.evil_team = []
         self.conversation_history = []
