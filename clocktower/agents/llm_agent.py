@@ -123,6 +123,10 @@ ACCUMULATED INFO FROM PREVIOUS NIGHTS:
 MEMORY FROM PAST GAMES:
 {memory_summary}
 
+THEORY OF MIND BELIEF STATE (PRIVATE, UNCERTAIN):
+{belief_state_summary}
+Treat this as a prior over who is Evil and what roles they might be. Update when new evidence appears.
+
 INFO ROLE DISCLOSURE (Empath, Chef, Fortune Teller, Investigator, etc.): Share your night information clearly and early. Be direct and concise — avoid over-explaining or seeming defensive. One clear statement (e.g. "I learned X") is better than long justifications. Trust helps Good; hedging or waffling helps Evil.
 
 NAMES NOT IDs: When discussing suspects, use player NAMES (e.g. Alice, Bob, Charlie) not p1/p2/p3 — it reduces confusion and helps coordination.
@@ -235,6 +239,7 @@ class LLMAgent(BaseAgent):
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         use_belief_modeling: bool = True,
+        use_theory_of_mind: Optional[bool] = None,
         use_learning: bool = True,
     ):
         super().__init__(name)
@@ -243,10 +248,14 @@ class LLMAgent(BaseAgent):
         self.api_key = api_key
         self.base_url = base_url
         self.use_belief_modeling = use_belief_modeling
+        self.use_theory_of_mind = (
+            use_belief_modeling if use_theory_of_mind is None else use_theory_of_mind
+        )
         self.use_learning = use_learning
 
         self.evil_team: list[dict] = []
         self.suspicion_scores: dict[str, float] = {}
+        self.player_beliefs: dict[str, dict] = {}
         self.conversation_history: list[dict] = []
 
         self._client = None
@@ -304,6 +313,9 @@ class LLMAgent(BaseAgent):
             if self.use_learning and self.memory_buffer
             else "No prior games."
         )
+        belief_state_summary = (
+            self._format_beliefs() if self.use_theory_of_mind else "Theory-of-mind disabled."
+        )
 
         template = SYSTEM_PROMPT_EVIL if team == "evil" else SYSTEM_PROMPT_GOOD
         kwargs = dict(
@@ -315,6 +327,7 @@ class LLMAgent(BaseAgent):
             evil_team_summary=evil_summary,
             night_info_summary=night_summary,
             memory_summary=memory_summary,
+            belief_state_summary=belief_state_summary,
         )
         if team == "good":
             kwargs["valid_role_names"] = VALID_ROLE_NAMES
@@ -350,6 +363,48 @@ class LLMAgent(BaseAgent):
         sorted_s = sorted(self.suspicion_scores.items(), key=lambda x: -x[1])
         return ", ".join(f"{pid}:{score:.2f}" for pid, score in sorted_s)
 
+    def _format_beliefs(self) -> str:
+        if not self.player_beliefs:
+            return "No belief data yet."
+        items = []
+        for pid, belief in self.player_beliefs.items():
+            evil_prob = float(belief.get("evil_prob", 0.5))
+            role_guess = belief.get("role_guess")
+            role_part = f", role~{role_guess}" if role_guess else ""
+            items.append(f"{pid}:evil={evil_prob:.2f}{role_part}")
+        return "; ".join(items)
+
+    def _normalize_role_guess(self, role_guess: object) -> Optional[str]:
+        if not isinstance(role_guess, str):
+            return None
+        role_guess = role_guess.strip()
+        if not role_guess:
+            return None
+        fixed = ROLE_HALLUCINATION_FIX.get(role_guess.lower(), role_guess)
+        for valid in VALID_ROLE_SET:
+            if fixed.lower() == valid.lower():
+                return valid
+        return None
+
+    def _extract_json_object(self, raw: str) -> Optional[dict]:
+        start = raw.find("{")
+        if start == -1:
+            return None
+        depth = 0
+        for idx, ch in enumerate(raw[start:], start=start):
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    candidate = raw[start:idx + 1]
+                    try:
+                        parsed = json.loads(candidate)
+                        return parsed if isinstance(parsed, dict) else None
+                    except json.JSONDecodeError:
+                        return None
+        return None
+
     # Exponential smoothing for suspicion (WOLF benchmark: suspicion aggregates across rounds)
     SUSPICION_ALPHA = 0.4  # Weight for new observation; 1-alpha for prior
 
@@ -358,23 +413,51 @@ class LLMAgent(BaseAgent):
         pid_list = [p["player_id"] for p in players if p["player_id"] != self.player_id]
 
         prompt = (
-            f"Based on your current knowledge, output a JSON object with "
-            f"suspicion scores (0.0 = definitely good, 1.0 = definitely demon/evil) "
-            f"for each of these player IDs: {pid_list}.\n"
-            f"Respond ONLY with valid JSON, e.g. {{\"p1\": 0.3, \"p2\": 0.8}}"
+            f"Based on your current knowledge and your just-produced statement:\n"
+            f"{response_text}\n\n"
+            f"Output JSON beliefs for each of these player IDs: {pid_list}.\n"
+            f"Format:\n"
+            f"{{\"beliefs\": {{\"p1\": {{\"evil_prob\": 0.7, \"role_guess\": \"Imp\"}}}}}}\n"
+            f"Rules:\n"
+            f"- evil_prob is a number in [0.0, 1.0]\n"
+            f"- role_guess must be one valid Trouble Brewing role name or null\n"
+            f"- include every player ID exactly once\n"
+            f"Respond ONLY with valid JSON."
         )
         raw = self._call_llm(self._build_system_prompt(), prompt)
         try:
-            match = re.search(r'\{[^{}]+\}', raw)
-            if match:
-                new_scores = json.loads(match.group())
-                for pid, new_val in new_scores.items():
-                    old_val = self.suspicion_scores.get(pid, 0.5)
-                    smoothed = (
-                        self.SUSPICION_ALPHA * float(new_val)
-                        + (1 - self.SUSPICION_ALPHA) * old_val
-                    )
-                    self.suspicion_scores[pid] = max(0.0, min(1.0, smoothed))
+            payload = self._extract_json_object(raw)
+            if not payload:
+                return
+
+            # Backward-compatible fallback: {"p1": 0.2, ...}
+            beliefs = payload.get("beliefs")
+            if isinstance(beliefs, dict):
+                belief_obj = beliefs
+            else:
+                belief_obj = payload
+
+            for pid in pid_list:
+                item = belief_obj.get(pid)
+                if isinstance(item, dict):
+                    evil_prob = item.get("evil_prob", 0.5)
+                    role_guess = self._normalize_role_guess(item.get("role_guess"))
+                else:
+                    evil_prob = item
+                    role_guess = None
+
+                old_val = self.suspicion_scores.get(pid, 0.5)
+                smoothed = (
+                    self.SUSPICION_ALPHA * float(evil_prob)
+                    + (1 - self.SUSPICION_ALPHA) * old_val
+                )
+                smoothed = max(0.0, min(1.0, smoothed))
+                self.suspicion_scores[pid] = smoothed
+                self.player_beliefs[pid] = {
+                    "evil_prob": smoothed,
+                    "role_guess": role_guess,
+                    "round": public_state.get("round"),
+                }
         except (json.JSONDecodeError, AttributeError, TypeError):
             pass
 
@@ -465,6 +548,10 @@ class LLMAgent(BaseAgent):
             f"YOUR SUSPICION SCORES: {suspicion_str}\n\n"
             if self.use_belief_modeling else ""
         )
+        beliefs_block = (
+            f"YOUR BELIEF STATE: {self._format_beliefs()}\n\n"
+            if self.use_theory_of_mind else ""
+        )
         known_roles_block = format_known_roles(public_state)
         solver_block = extract_claims_and_hints(public_state, discussion_history, self.night_infos) if self.my_team == "good" else ""
         user_msg = (
@@ -473,13 +560,14 @@ class LLMAgent(BaseAgent):
             + (f"{solver_block}\n" if solver_block else "")
             + f"RECENT DISCUSSION:\n{discussion_str}\n\n"
             f"{suspicion_block}"
+            f"{beliefs_block}"
             f"{tone}\n"
             f"Keep to 1–2 SHORT sentences (under 50 words). Be direct. Do NOT repeat what you've already said. "
             f"Output ONLY the exact words your character says aloud. No meta-commentary."
         )
         response = self._call_llm(system, user_msg)
 
-        if self.use_belief_modeling:
+        if self.use_belief_modeling or self.use_theory_of_mind:
             try:
                 self._update_suspicion(response, public_state)
             except Exception:
@@ -757,10 +845,17 @@ class LLMAgent(BaseAgent):
         system = self._build_system_prompt()
         state_str = self._format_public_state(public_state)
         discussion_str = self._format_discussion(discussion_history)
-        suspicion = self.suspicion_scores.get(nominee_id, 0.5) if self.use_belief_modeling else 0.5
+        use_beliefs = self.use_belief_modeling or self.use_theory_of_mind
+        suspicion = self.suspicion_scores.get(nominee_id, 0.5) if use_beliefs else 0.5
+        belief_prob = float(
+            self.player_beliefs.get(nominee_id, {}).get("evil_prob", suspicion)
+        ) if use_beliefs else suspicion
+        combined_belief = (suspicion + belief_prob) / 2.0
         suspicion_line = (
-            f"Your suspicion score for {nominee_id}: {suspicion:.2f}\n\n"
-            if self.use_belief_modeling else ""
+            f"Your suspicion score for {nominee_id}: {suspicion:.2f}\n"
+            f"Your belief evil-probability for {nominee_id}: {belief_prob:.2f}\n"
+            f"Combined risk score for {nominee_id}: {combined_belief:.2f}\n\n"
+            if use_beliefs else ""
         )
 
         alive = sum(1 for p in public_state.get("players", []) if p.get("is_alive", True))

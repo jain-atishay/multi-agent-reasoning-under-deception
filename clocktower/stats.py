@@ -37,6 +37,14 @@ class GameRecord:
     # For Deductive Ability (proposal): role-to-reasoning semantic similarity
     # Each item: {role, player_id, message} — use embeddings for post-hoc analysis
     reasoning_samples: list[dict] = field(default_factory=list)
+    # Theory-of-Mind / belief-state tracking
+    # Each item: {observer_id, observer_name, target_id, evil_prob, predicted_evil, actual_evil, role_guess, actual_role}
+    belief_samples: list[dict] = field(default_factory=list)
+    belief_eval_count: int = 0
+    belief_correct_count: int = 0
+    belief_brier_total: float = 0.0
+    belief_role_eval_count: int = 0
+    belief_role_correct_count: int = 0
 
 
 @dataclass
@@ -65,6 +73,13 @@ class GameStats:
 
     # Per-variant performance: variant → {good_wins, evil_wins, games}
     variant_performance: dict[str, dict] = field(default_factory=dict)
+
+    # Belief-state metrics (aggregated over all observer-target pairs)
+    belief_eval_count: int = 0
+    belief_correct_count: int = 0
+    belief_brier_total: float = 0.0
+    belief_role_eval_count: int = 0
+    belief_role_correct_count: int = 0
 
     # History of all game records (for deep analysis)
     game_history: list[dict] = field(default_factory=list)
@@ -111,6 +126,12 @@ class GameStats:
         self.variant_performance[v]["games"] += 1
         self.variant_performance[v][f"{record.winner}_wins"] += 1
 
+        self.belief_eval_count += record.belief_eval_count
+        self.belief_correct_count += record.belief_correct_count
+        self.belief_brier_total += record.belief_brier_total
+        self.belief_role_eval_count += record.belief_role_eval_count
+        self.belief_role_correct_count += record.belief_role_correct_count
+
         self.game_history.append({
             "game_id": record.game_id,
             "winner": record.winner,
@@ -118,6 +139,12 @@ class GameStats:
             "demon_executed": record.demon_executed,
             "variant": record.agent_variant,
             "reasoning_samples": record.reasoning_samples,  # for Deductive Ability analysis
+            "belief_samples": record.belief_samples,
+            "belief_eval_count": record.belief_eval_count,
+            "belief_correct_count": record.belief_correct_count,
+            "belief_brier_total": record.belief_brier_total,
+            "belief_role_eval_count": record.belief_role_eval_count,
+            "belief_role_correct_count": record.belief_role_correct_count,
         })
 
     # ── Derived metrics ────────────────────────────────────────
@@ -145,6 +172,27 @@ class GameStats:
         """% of executions that killed an evil player."""
         return self.correct_executions / self.executions if self.executions > 0 else 0.0
 
+    @property
+    def belief_team_accuracy(self) -> float:
+        return (
+            self.belief_correct_count / self.belief_eval_count
+            if self.belief_eval_count > 0 else 0.0
+        )
+
+    @property
+    def belief_brier_score(self) -> float:
+        return (
+            self.belief_brier_total / self.belief_eval_count
+            if self.belief_eval_count > 0 else 0.0
+        )
+
+    @property
+    def belief_role_accuracy(self) -> float:
+        return (
+            self.belief_role_correct_count / self.belief_role_eval_count
+            if self.belief_role_eval_count > 0 else 0.0
+        )
+
     def summary(self) -> str:
         lines = [
             f"═══════════════════════════════════════",
@@ -159,6 +207,16 @@ class GameStats:
             f"  Nomination accuracy:  {self.nomination_accuracy:.1%}",
             f"  Execution accuracy:   {self.execution_accuracy:.1%}",
         ]
+        if self.belief_eval_count > 0:
+            lines.extend([
+                "",
+                f"  Belief team accuracy: {self.belief_team_accuracy:.1%} ({self.belief_eval_count} pairs)",
+                f"  Belief Brier score:   {self.belief_brier_score:.3f} (lower is better)",
+            ])
+            if self.belief_role_eval_count > 0:
+                lines.append(
+                    f"  Belief role accuracy: {self.belief_role_accuracy:.1%} ({self.belief_role_eval_count} guesses)"
+                )
         if self.variant_performance:
             lines.append("")
             lines.append("  Per-variant evil win rate:")
