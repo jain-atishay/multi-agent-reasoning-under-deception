@@ -326,6 +326,53 @@ class _InstrumentedStoryteller(Storyteller):
                     "message": e.get("message", ""),
                 })
 
+        # Theory-of-mind belief metrics (from LLM agents if available)
+        belief_samples = []
+        belief_eval_count = 0
+        belief_correct_count = 0
+        belief_brier_total = 0.0
+        belief_role_eval_count = 0
+        belief_role_correct_count = 0
+
+        player_id_to_team = {p.player_id: p.role.team for p in self.state.players}
+        player_id_to_role = {p.player_id: p.role.name for p in self.state.players}
+
+        for agent in self.agents:
+            beliefs = getattr(agent, "player_beliefs", None)
+            if not isinstance(beliefs, dict) or not beliefs:
+                continue
+            observer_id = getattr(agent, "player_id", None)
+            observer_name = getattr(agent, "name", None)
+            for target_id, belief in beliefs.items():
+                if target_id == observer_id:
+                    continue
+                if target_id not in player_id_to_team:
+                    continue
+                evil_prob = float(belief.get("evil_prob", 0.5))
+                actual_evil = player_id_to_team[target_id] == "evil"
+                predicted_evil = evil_prob >= 0.5
+                brier = (evil_prob - (1.0 if actual_evil else 0.0)) ** 2
+                belief_eval_count += 1
+                belief_correct_count += 1 if predicted_evil == actual_evil else 0
+                belief_brier_total += brier
+
+                role_guess = belief.get("role_guess")
+                actual_role = player_id_to_role[target_id]
+                if role_guess:
+                    belief_role_eval_count += 1
+                    belief_role_correct_count += 1 if role_guess == actual_role else 0
+
+                belief_samples.append({
+                    "observer_id": observer_id,
+                    "observer_name": observer_name,
+                    "target_id": target_id,
+                    "evil_prob": evil_prob,
+                    "predicted_evil": predicted_evil,
+                    "actual_evil": actual_evil,
+                    "role_guess": role_guess,
+                    "actual_role": actual_role,
+                })
+
         return GameRecord(
             game_id=self.game_id,
             winner=self.state.winner or "unknown",
@@ -338,4 +385,10 @@ class _InstrumentedStoryteller(Storyteller):
             role_survivals=role_survivals,
             agent_variant=variant,
             reasoning_samples=reasoning_samples,
+            belief_samples=belief_samples,
+            belief_eval_count=belief_eval_count,
+            belief_correct_count=belief_correct_count,
+            belief_brier_total=belief_brier_total,
+            belief_role_eval_count=belief_role_eval_count,
+            belief_role_correct_count=belief_role_correct_count,
         )
